@@ -1,0 +1,27 @@
+=== СЕРВЕР ===
+IP: 89.111.175.54
+OS: Ubuntu 24.04 LTS
+CPU: 1 ядро 2.2 ГГц
+RAM: 1 ГБ
+SSD: 10 ГБ
+
+SSH доступ:
+  Логин: root
+  Пароль: hwEOYO2hzemBVA8F
+
+=== DNS (REG.RU) ===
+Панель: https://dnsadmin.hosting.reg.ru/manager/ispmgr
+Логин: ce114738149
+Пароль: BTa7YUu!E4nAmjy
+NS серверы: ns5.hosting.reg.ru, ns6.hosting.reg.ru
+
+=== ГОТОВЫЕ КЛЮЧИ ===
+GLM API: ✅
+Telegram Bot: ✅
+Unsplash: ✅
+
+=== НУЖНО ПОЛУЧИТЬ ===
+VK Access Token
+VK Group ID
+WordPress (опционально)
+OpenWeatherMap (опционально)
