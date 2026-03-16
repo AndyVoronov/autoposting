@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  api:
+    image: ${DOCKER_REGISTRY}/autoposting-api:${VERSION:-latest}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DEBUG=false
+    depends_on:
+      - db
+      - redis
+    networks:
+      - autoposting-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    image: ${DOCKER_REGISTRY}/autoposting-frontend:${VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - autoposting-network
+
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    networks:
+      - autoposting-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - autoposting-network
+    command: redis-server --appendonly yes
+
+  celery:
+    image: ${DOCKER_REGISTRY}/autoposting-api:${VERSION:-latest}
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: celery -A app.tasks worker --loglevel=info --concurrency=4
+    depends_on:
+      - db
+      - redis
+    networks:
+      - autoposting-network
+
+  celery-beat:
+    image: ${DOCKER_REGISTRY}/autoposting-api:${VERSION:-latest}
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: celery -A app.tasks beat --loglevel=info
+    depends_on:
+      - db
+      - redis
+    networks:
+      - autoposting-network
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./media:/var/www/media:ro
+    depends_on:
+      - api
+      - frontend
+    networks:
+      - autoposting-network
+
+networks:
+  autoposting-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

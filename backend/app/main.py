@@ -15,6 +15,7 @@ from app.api import (
     censorship_router,
     products_router,
     settings_router,
+    analytics_router,
 )
 
 
@@ -63,6 +64,7 @@ app.include_router(queue_router)
 app.include_router(censorship_router)
 app.include_router(products_router)
 app.include_router(settings_router)
+app.include_router(analytics_router)
 
 
 @app.get("/health")

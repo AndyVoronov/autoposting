@@ -7,6 +7,7 @@ from app.api.queue import router as queue_router
 from app.api.censorship import router as censorship_router
 from app.api.products import router as products_router
 from app.api.settings import router as settings_router
+from app.api.analytics import router as analytics_router
 
 __all__ = [
     "auth_router",
@@ -17,4 +18,5 @@ __all__ = [
     "censorship_router",
     "products_router",
     "settings_router",
+    "analytics_router",
 ]
