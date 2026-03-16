@@ -12,6 +12,9 @@ from app.api import (
     posts_router,
     content_types_router,
     queue_router,
+    censorship_router,
+    products_router,
+    settings_router,
 )
 
 
@@ -57,6 +60,9 @@ app.include_router(channels_router)
 app.include_router(posts_router)
 app.include_router(content_types_router)
 app.include_router(queue_router)
+app.include_router(censorship_router)
+app.include_router(products_router)
+app.include_router(settings_router)
 
 
 @app.get("/health")
