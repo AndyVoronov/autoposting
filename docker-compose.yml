@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: autoposting-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./backend/app:/app/app
+      - ./media:/app/media
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: autoposting-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    depends_on:
+      - api
+
+  db:
+    image: postgres:15-alpine
+    container_name: autoposting-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-autoposting}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-autoposting}
+      POSTGRES_DB: ${DB_NAME:-autoposting}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: autoposting-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: autoposting-celery
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: celery -A app.tasks worker --loglevel=info
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./backend/app:/app/app
+
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: autoposting-celery-beat
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: celery -A app.tasks beat --loglevel=info
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./backend/app:/app/app
+
+  nginx:
+    image: nginx:alpine
+    container_name: autoposting-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./media:/var/www/media:ro
+    depends_on:
+      - api
+      - frontend
+
+volumes:
+  postgres_data:
+  redis_data:
