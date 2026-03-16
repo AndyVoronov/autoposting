@@ -10,6 +10,7 @@ from app.services.content import (
     animal_facts_source,
     news_source,
     city_source,
+    moscow_facts_source,
     affiliate_source,
 )
 from app.models.post import Post, PostStatus
@@ -63,7 +64,50 @@ def fetch_reddit_content():
                 db.add(post)
 
             db.commit()
-            return {"fetched": len(posts)}
+            return {"generated": generated}
+        finally:
+            db.close()
+    finally:
+        loop.close()
+
+
+@shared_task(name="app.tasks.content_tasks.generate_moscow_facts")
+def generate_moscow_facts():
+    from app.services.content.moscow_facts import MoscowFactsSource
+    import asyncio
+
+    source = MoscowFactsSource()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    try:
+        facts = loop.run_until_complete(source.generate_multiple(count=3, use_ai=True))
+
+        db = SyncSession()
+        try:
+            content_type = (
+                db.query(ContentTypeModel).filter(ContentTypeModel.type == "moscow_facts").first()
+            )
+
+            generated = 0
+            for fact in facts:
+                post = Post(
+                    channel_id=1,
+                    content_type_id=content_type.id if content_type else None,
+                    title=fact["topic"],
+                    body=fact["body"],
+                    status=PostStatus.PENDING,
+                    generated_at=datetime.utcnow(),
+                    ai_metadata={
+                        "fact_type": fact["type"],
+                        "generated_with_ai": fact.get("generated_with_ai", False),
+                    },
+                )
+                db.add(post)
+                generated += 1
+
+            db.commit()
+            return {"generated": generated}
         finally:
             db.close()
     finally:

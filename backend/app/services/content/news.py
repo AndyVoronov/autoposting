@@ -15,6 +15,8 @@ class NewsSource:
         "interfax": "https://www.interfax.ru/rss.asp",
         "rbc": "https://rssexport.rbc.ru/rbcnews/news.rss",
         "lenta": "https://lenta.ru/rss",
+        "mos_ru": "https://www.mos.ru/news/rss/",
+        "moscow_live": "https://moscow.live/rss",
     }
 
     def __init__(self):
@@ -60,14 +62,61 @@ class NewsSource:
         content = f"{entry.get('title', '')}:{entry.get('link', '')}"
         return hashlib.md5(content.encode()).hexdigest()
 
+    async def check_interesting(self, title: str, summary: str) -> bool:
+        if not title and not summary:
+            return False
+
+        content = f"{title}\n\n{summary}"[:500]
+
+        prompt = f"""Оцени, интересна ли эта новость широкой аудитории для Telegram канала о Москве.
+
+Новость:
+{content}
+
+Критерии интересности:
+- Позитивная или нейтральная (не катастрофы, не политика)
+- Полезная информация для жителей Москвы
+- Интересные события, места, люди
+- Не скучные официальные отчеты
+
+Ответь ТОЛЬКО словом "ДА" или "НЕТ"."""
+
+        try:
+            response = await ai_service.generate_text(
+                prompt=prompt,
+                max_tokens=10,
+                temperature=0.3,
+            )
+
+            if response:
+                return "ДА" in response.upper()
+            return True
+        except Exception as e:
+            print(f"Error checking interestingness: {e}")
+            return True
+
     async def process_news(
         self,
         news_item: dict,
         summarize: bool = True,
         check_censorship_flag: bool = True,
+        filter_interesting: bool = False,
     ) -> dict:
         title = news_item.get("title", "")
         summary = news_item.get("summary", "")
+
+        if filter_interesting:
+            is_interesting = await self.check_interesting(title, summary)
+            if not is_interesting:
+                return {
+                    "title": title,
+                    "body": "",
+                    "source_url": news_item.get("link"),
+                    "source_name": news_item.get("source"),
+                    "censorship_passed": False,
+                    "censorship_flags": ["not_interesting"],
+                    "skipped": True,
+                }
 
         content = summary if summary else title
 

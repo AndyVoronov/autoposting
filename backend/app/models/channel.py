@@ -45,6 +45,7 @@ class ContentType(str, enum.Enum):
     ANIMAL_FACTS = "animal_facts"
     NEWS = "news"
     CITY = "city"
+    MOSCOW_FACTS = "moscow_facts"
     AFFILIATE = "affiliate"
     CUSTOM = "custom"
 

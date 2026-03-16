@@ -46,6 +46,14 @@ class AIService:
             print(f"AI Service error: {e}")
             return None
 
+    async def generate_text(
+        self,
+        prompt: str,
+        temperature: float = 0.7,
+        max_tokens: int = 2000,
+    ) -> Optional[str]:
+        return await self.chat(prompt=prompt, temperature=temperature, max_tokens=max_tokens)
+
     async def translate_to_russian(self, text: str) -> Optional[str]:
         return await self.chat(
             prompt=text,
