@@ -9,6 +9,8 @@ from app.services.content import (
     horoscope_source,
     animal_facts_source,
     news_source,
+    city_source,
+    affiliate_source,
 )
 from app.models.post import Post, PostStatus
 from app.models.channel import ContentTypeModel
@@ -186,6 +188,116 @@ def fetch_news_content():
 
             db.commit()
             return {"fetched": count}
+        finally:
+            db.close()
+    finally:
+        loop.close()
+
+
+@shared_task(name="app.tasks.content_tasks.generate_city_content")
+def generate_city_content():
+    from app.services.content.city import CitySource, CITIES_CONFIG
+    from app.config import settings
+    import asyncio
+
+    source = CitySource(weather_api_key=settings.OPENWEATHER_API_KEY)
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    try:
+        db = SyncSession()
+        try:
+            content_type = (
+                db.query(ContentTypeModel).filter(ContentTypeModel.type == "city").first()
+            )
+
+            generated = 0
+            for city_key in CITIES_CONFIG.keys():
+                post_data = loop.run_until_complete(
+                    source.generate_city_post(city_key, include_weather=True, include_greeting=True)
+                )
+
+                if "error" in post_data:
+                    continue
+
+                post = Post(
+                    channel_id=1,
+                    content_type_id=content_type.id if content_type else None,
+                    title=f"Новости {post_data['city_name']}",
+                    body=post_data["body"],
+                    status=PostStatus.PENDING,
+                    generated_at=datetime.utcnow(),
+                    ai_metadata={
+                        "city": city_key,
+                        "weather_included": post_data.get("weather_included"),
+                    },
+                )
+                db.add(post)
+                generated += 1
+
+            db.commit()
+            return {"generated": generated}
+        finally:
+            db.close()
+    finally:
+        loop.close()
+
+
+@shared_task(name="app.tasks.content_tasks.generate_affiliate_posts")
+def generate_affiliate_posts():
+    from app.services.content.affiliate import AffiliateSource
+    from app.models.analytics import AffiliateProduct
+    import asyncio
+
+    source = AffiliateSource()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    try:
+        db = SyncSession()
+        try:
+            products = (
+                db.query(AffiliateProduct).filter(AffiliateProduct.is_active == True).limit(5).all()
+            )
+
+            for product in products:
+                source.add_product(
+                    name=product.name,
+                    description=product.description or "",
+                    ref_url=product.ref_url,
+                    category=product.category,
+                    keywords=[],
+                )
+
+            content_type = (
+                db.query(ContentTypeModel).filter(ContentTypeModel.type == "affiliate").first()
+            )
+
+            generated = 0
+            for _ in range(min(3, len(products))):
+                post_data = loop.run_until_complete(source.generate_post(use_ai=True))
+
+                if not post_data:
+                    continue
+
+                post = Post(
+                    channel_id=1,
+                    content_type_id=content_type.id if content_type else None,
+                    title=post_data["product_name"],
+                    body=post_data["body"],
+                    status=PostStatus.PENDING,
+                    generated_at=datetime.utcnow(),
+                    ai_metadata={
+                        "product_category": post_data.get("product_category"),
+                        "ref_url": post_data["ref_url"],
+                        "generated_with_ai": post_data.get("generated_with_ai", False),
+                    },
+                )
+                db.add(post)
+                generated += 1
+
+            db.commit()
+            return {"generated": generated}
         finally:
             db.close()
     finally:

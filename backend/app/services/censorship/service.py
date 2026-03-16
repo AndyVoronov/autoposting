@@ -44,7 +44,7 @@ class CensorshipService:
             result = await self.db.execute(
                 select(CensorshipRule).where(CensorshipRule.is_active == True)
             )
-            self._rules_cache = result.scalars().all()
+            self._rules_cache = list(result.scalars().all())
         return self._rules_cache
 
     def clear_cache(self):

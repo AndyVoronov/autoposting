@@ -16,6 +16,7 @@ from app.api import (
     products_router,
     settings_router,
     analytics_router,
+    ai_router,
 )
 
 
@@ -56,15 +57,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth_router)
-app.include_router(channels_router)
-app.include_router(posts_router)
-app.include_router(content_types_router)
-app.include_router(queue_router)
-app.include_router(censorship_router)
-app.include_router(products_router)
-app.include_router(settings_router)
-app.include_router(analytics_router)
+app.include_router(auth_router, prefix="/api")
+app.include_router(channels_router, prefix="/api")
+app.include_router(posts_router, prefix="/api")
+app.include_router(content_types_router, prefix="/api")
+app.include_router(queue_router, prefix="/api")
+app.include_router(censorship_router, prefix="/api")
+app.include_router(products_router, prefix="/api")
+app.include_router(settings_router, prefix="/api")
+app.include_router(analytics_router, prefix="/api")
+app.include_router(ai_router, prefix="/api")
 
 
 @app.get("/health")

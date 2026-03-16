@@ -37,6 +37,8 @@ class Settings(BaseSettings):
 
     # Unsplash
     UNSPLASH_ACCESS_KEY: Optional[str] = None
+    UNSPLASH_SECRET_KEY: Optional[str] = None
+    UNSPLASH_APP_ID: Optional[str] = None
 
     # OpenWeatherMap
     OPENWEATHER_API_KEY: Optional[str] = None

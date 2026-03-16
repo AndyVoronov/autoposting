@@ -38,7 +38,7 @@ class WordPressPublisher:
         if not self.auth:
             return {"error": "WordPress credentials not configured"}
 
-        data = {
+        data: dict[str, str | int | list[int] | dict] = {
             "title": title,
             "content": content,
             "status": status,

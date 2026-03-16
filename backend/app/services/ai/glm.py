@@ -99,6 +99,30 @@ class AIService:
             max_tokens=500,
         )
 
+    async def improve_text(self, text: str) -> Optional[str]:
+        return await self.chat(
+            prompt=f"Улучши следующий текст, сделай его более интересным и engaging:\n\n{text}",
+            system_prompt="Ты профессиональный SMM-специалист. Улучшай текст, сохраняя его смысл. Добавляй эмодзи умеренно.",
+            temperature=0.7,
+            max_tokens=2000,
+        )
+
+    async def shorten_text(self, text: str, max_chars: int = 500) -> Optional[str]:
+        return await self.chat(
+            prompt=f"Сократи текст до примерно {max_chars} символов, сохранив главный смысл:\n\n{text}",
+            system_prompt="Ты редактор соцсетей. Сокращай текст, убирая лишнее, но сохраняя суть.",
+            temperature=0.5,
+            max_tokens=1000,
+        )
+
+    async def rewrite_text_for_post(self, text: str) -> Optional[str]:
+        return await self.chat(
+            prompt=f"Перепиши текст другими словами, сохранив смысл:\n\n{text}",
+            system_prompt="Ты копирайтер. Переписывай текст интересно, уникально, избегая плагиата.",
+            temperature=0.8,
+            max_tokens=2000,
+        )
+
     async def check_censorship(self, text: str) -> dict:
         response = await self.chat(
             prompt=f"""Проверь текст на наличие запрещённого в РФ контента:
