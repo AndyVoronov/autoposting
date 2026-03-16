@@ -46,7 +46,7 @@
       <div class="card">
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-            <CursorArrowClickIcon class="w-5 h-5 text-blue-400" />
+            <CursorArrowRaysIcon class="w-5 h-5 text-blue-400" />
           </div>
           <div>
             <p class="text-dark-400 text-sm">Кликов</p>
@@ -147,7 +147,7 @@ import {
   DocumentTextIcon,
   ClockIcon,
   EyeIcon,
-  CursorArrowClickIcon,
+  CursorArrowRaysIcon,
 } from '@heroicons/vue/24/outline'
 
 const loading = ref(true)
